@@ -354,6 +354,7 @@ def main(page):
                     ftbutton,
                     ft.FilledButton(content=ft.Text("Add invisible symbol"), on_click=addinvisymbl),
                     log_field,
+                    ft.Text("Domain changer")
                     domenchange,
                 ]
             )
