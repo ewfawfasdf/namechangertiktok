@@ -316,7 +316,7 @@ def main(page):
                 logadd(f"Couldn't change the name")
                 ftbutton.visible = True
                 if json.loads(ch)["status_msg"] == "Slow down, you are editing too fast.":
-                    logadd("Slow down you are editing to fast, try it on another account")
+                    logadd("Slow down you are editing to fast, try it on another account e")
                 page.update()
         else:
             logadd("Invalid session ID or other error.")
