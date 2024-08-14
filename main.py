@@ -22,7 +22,7 @@ from hashlib import md5
 from copy import deepcopy
 from random import choice
 
-
+domen = "api.tiktokv.com"
 def hex_string(num):
     tmp_string = hex(num)[2:]
     if len(tmp_string) < 2:
@@ -217,7 +217,7 @@ def get_profile(session_id, device_id, iid):
             "&app_language=en&tz_name=Asia/Riyadh&carrier_region1=SA&build_number=340002&device_platform=iphone"
             "&device_type=iPhone13,4"
         )
-        url = f"https://api16.tiktokv.com/aweme/v1/user/profile/self/?{parm}"
+        url = f"https://{domen}/aweme/v1/user/profile/self/?{parm}"
         headers = {
             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
             "Cookie": f"sessionid={session_id}",
@@ -243,7 +243,7 @@ def change_username(session_id, device_id, iid, last_username, new_username):
 
 
     sig = run(parm, md5(data.encode("utf-8")).hexdigest() if data else None,None)
-    url = f"https://api16.tiktokv.com/aweme/v1/commit/user/?{parm}"
+    url = f"https://{domen}/aweme/v1/commit/user/?{parm}"
     headers = {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "DELETE, POST, GET, OPTIONS",
@@ -286,7 +286,8 @@ def main(page):
         newname.value = newname.value+"\u200D"
         newname.update()
     page.adaptive = True
-
+    def ddchanged(a):
+        domen = domenchange.value
     page.appbar = ft.AppBar(
         title=ft.Text("Name changer"),
         actions=[
@@ -332,6 +333,17 @@ def main(page):
         text_align=ft.TextAlign.LEFT,
         read_only=True
     )
+    domenchange = ft.Dropdown(value=domen,options=[
+        ft.dropdown.Option("api.tiktokv.com"),
+        ft.dropdown.Option("api16-normal-c-alisg.tiktokv.com"),
+        ft.dropdown.Option("api19-normal-useast1a.tiktokv.com"),
+        ft.dropdown.Option("api16-normal-c-alisg.tiktokv.com"),
+        ft.dropdown.Option("api16-normal-c-useast1a.tiktokv.com"),
+        ft.dropdown.Option("api16-normal-c-useast2a.tiktokv.com"),
+        ft.dropdown.Option("api16-normal-v4.tiktokv.com"),
+        ft.dropdown.Option("api16-normal-v6.tiktokv.com"),
+        ft.dropdown.Option("api16-va.tiktokv.com"),
+    ], on_change=ddchanged)
     ftbutton = ft.FilledButton(content=ft.Text("Change"),on_click=changnameclicked)
     page.add(
         ft.SafeArea(
@@ -342,6 +354,7 @@ def main(page):
                     ftbutton,
                     ft.FilledButton(content=ft.Text("Add invisible symbol"), on_click=addinvisymbl),
                     log_field,
+                    domenchange,
                 ]
             )
         )
