@@ -315,7 +315,7 @@ def main(page):
             else:
                 logadd(f"Couldn't change the name")
                 ftbutton.visible = True
-                if json.loads(ch)[""status_msg""] == "Slow down, you are editing too fast.":
+                if json.loads(ch)["status_msg"] == "Slow down, you are editing too fast.":
                     logadd("Slow down you are editing to fast, try it on another account")
                 page.update()
         else:
