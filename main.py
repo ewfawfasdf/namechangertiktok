@@ -9,6 +9,7 @@ from hashlib import md5
 from copy import deepcopy
 from random import choice
 import requests
+import datetime
 import hashlib
 import random
 from urllib.parse import quote
@@ -268,15 +269,22 @@ import flet as ft
 
 
 def main(page):
-    def logadd(a):
-        log.value = a
-        page.update()
+    def logadd(e):
+        # Добавляем новую строку в текстовое поле логов
+        new_log = f"{datetime.datetime.now().strftime('%H:%M:%S')} "+e+" \n"
+        log_field.value += new_log
+        log_field.update()
+
     def tgbutton(a):
         if sys.platform.startswith('win'):
             os.system(f'start https://t.me/ttrussianaccounts')
 
         else:
             os.system(f'xdg-open https://t.me/ttrussianaccounts')
+    def addinvisymbl(a):
+
+        newname.value = newname.value+"\u200D"
+        newname.update()
     page.adaptive = True
 
     page.appbar = ft.AppBar(
@@ -285,7 +293,6 @@ def main(page):
             ft.IconButton(ft.icons.TELEGRAM, style=ft.ButtonStyle(padding=0),on_click=tgbutton)
         ],
     )
-    log = ft.Text("Log")
     def changnameclicked(e):
         device_id = str(random.randint(777777788, 999999999999))
         iid = str(random.randint(777777788, 999999999999))
@@ -295,43 +302,49 @@ def main(page):
 
         user = get_profile(session_id, device_id, iid)
         if user != "None":
-            logadd(f"Ваше имя: {user}")
+            logadd(f"Your name: {user}")
             new_username = newname.value
             ch = change_username(session_id, device_id, iid, user, new_username)
             sleep(5)
             newnm = get_profile(session_id, device_id, iid)
             if new_username == newnm:
-                logadd(f"Имя изменено на: {newnm}")
+                logadd(f"Name Changed: {newnm}")
                 ftbutton.visible = True
                 page.update()
             else:
-                logadd(f"Не получилось изменить имя")
+                logadd(f"Couldn't change the name")
                 ftbutton.visible = True
                 if json.loads(ch)["status_code"] == 2160:
-                    logadd("Slow down you are editing to fast, попрбуй на другом аккаунте")
+                    logadd("Slow down you are editing to fast, try it on another account")
                 page.update()
         else:
             logadd("Invalid session ID or other error.")
             ftbutton.visible = True
             page.update()
 
-    sesid = ft.TextField(keyboard_type=ft.KeyboardType.TEXT)
-    newname = ft.TextField(keyboard_type=ft.KeyboardType.TEXT)
+    sesid = ft.TextField(max_length=32,label="Session id",keyboard_type=ft.KeyboardType.TEXT, password=True, can_reveal_password=True)
+    newname = ft.TextField(max_length=50,label="New Name",prefix_text="https://www.tiktok.com/@", keyboard_type=ft.KeyboardType.TEXT)
+    log_field = ft.TextField(
+        label="Logs",
+        multiline=True,
+        width=400,
+        height=200,
+        text_align=ft.TextAlign.LEFT,
+        read_only=True
+    )
     ftbutton = ft.FilledButton(content=ft.Text("Change"),on_click=changnameclicked)
     page.add(
         ft.SafeArea(
             ft.Column(
                 [
-                    ft.Text("Session id:"),
                     sesid,
-                    ft.Text("New name:"),
                     newname,
                     ftbutton,
-                    log,
+                    ft.FilledButton(content=ft.Text("Add invisible symbol"), on_click=addinvisymbl),
+                    log_field,
                 ]
             )
         )
     )
-
 
 ft.app(target=main,assets_dir="assets")
