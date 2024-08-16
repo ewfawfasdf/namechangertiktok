@@ -76,7 +76,7 @@ def get_qrcode_url():
     qrcode_index_url = convert_escape_sequence(qrcode_index_url)
 
     shorten_url = short_url(qrcode_index_url)
-    print("Go to this url:", shorten_url)
+    print("Go to this url:", f"https://api.qrserver.com/v1/create-qr-code/?&data={shorten_url}")
     return token, ttwid, passport_csrf_token, shorten_url
 
 # Function to continuously check for QR code scan and confirmation, and retrieve session ID
