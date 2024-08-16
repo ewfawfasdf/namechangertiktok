@@ -2,13 +2,15 @@ import base64
 import binascii
 import hashlib
 import json
+import io
 import os
-import random
-import threading
 import re
 import sys
+import threading
 from copy import deepcopy
-from time import sleep, time
+from datetime import datetime
+
+from time import time, sleep
 from urllib.parse import quote
 
 import requests
@@ -16,6 +18,7 @@ import qrcode
 from flask import Flask, render_template, request
 import flet as ft
 from flet import IconButton, Page, Row, TextField, icons
+from random import choice
 
 domen = "api.tiktokv.com"
 def hex_string(num):
