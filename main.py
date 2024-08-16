@@ -1,26 +1,20 @@
+import base64
+import binascii
 import hashlib
 import json
-import sys
 import os
+import random
+import re
+import sys
+from copy import deepcopy
+from time import sleep, time
+from urllib.parse import quote
+
+import requests
+import qrcode
+from flask import Flask, render_template, request
 import flet as ft
 from flet import IconButton, Page, Row, TextField, icons
-from time import time, sleep
-from hashlib import md5
-from copy import deepcopy
-from random import choice
-import requests
-import datetime
-import hashlib
-import random
-from urllib.parse import quote
-from flask import Flask, render_template, request
-import random
-import requests
-import binascii
-from time import time
-from hashlib import md5
-from copy import deepcopy
-from random import choice
 
 domen = "api.tiktokv.com"
 def hex_string(num):
@@ -29,6 +23,60 @@ def hex_string(num):
         tmp_string = '0' + tmp_string
     return tmp_string
 
+def GET(url):
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0',
+        'Accept': 'application/json, text/javascript',
+        'Content-Type': 'application/x-www-form-urlencoded',
+    }
+    return requests.get(url, headers=headers)
+
+# Function to perform a GET request with custom headers including cookies
+def GET_h(url, ttwid, passport_csrf_token):
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0',
+        'Accept': 'application/json, text/javascript',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'cookie': f'ttwid={ttwid}; passport_csrf_token={passport_csrf_token};',
+        'x-tt-passport-csrf-token': f'{passport_csrf_token}'
+    }
+    return requests.get(url, headers=headers)
+
+# Function to decode escape sequences in a URL
+def convert_escape_sequence(s):
+    return s.encode().decode('unicode_escape')
+
+# Function to shorten a URL using TikTok's URL shortening service
+def short_url(url_to_short):
+    url = "https://www.tiktok.com/shorten/?aid=1988"
+    payload = {
+        'targets': url_to_short,
+        'belong': 'tiktok-webapp-qrcode'
+    }
+    response = requests.post(url, data=payload)
+    url_shorten_list = re.findall(r'"short_url":"(.*?)"', response.text)
+    url_shorten = url_shorten_list[0] if url_shorten_list else None
+    return url_shorten
+
+# Function to retrieve the QR code URL and related tokens
+def get_qrcode_url():
+    url = "https://www.tiktok.com/passport/web/get_qrcode/?next=https://www.tiktok.com&aid=1459"
+    response = requests.post(url)
+    cookies = response.cookies
+
+    passport_csrf_token = cookies.get('passport_csrf_token')
+    ttwid = GET('https://www.tiktok.com/login/qrcode')
+    ttwid = ttwid.cookies.get('ttwid')
+
+    token_match = re.search(r'"token":"(.*?)"', response.text)
+    qrcode_index_url_match = re.search(r'"qrcode_index_url":"(.*?)"', response.text)
+
+    token = token_match.group(1) if token_match else None
+    qrcode_index_url = qrcode_index_url_match.group(1) if qrcode_index_url_match else None
+    qrcode_index_url = convert_escape_sequence(qrcode_index_url)
+
+    shorten_url = short_url(qrcode_index_url)
+    return token, ttwid, passport_csrf_token, shorten_url
 
 def RBIT(num):
     result = ''
@@ -265,10 +313,24 @@ def change_username(session_id, device_id, iid, last_username, new_username):
         return result
 
 
-import flet as ft
-
-
 def main(page):
+    def check_qr_connect(token, ttwid, passport_csrf_token):
+        """Function to continuously check the status of QR Code connection."""
+        while True:
+            qr_check = GET_h(
+                f'https://web-va.tiktok.com/passport/web/check_qrconnect/?next=https%3A%2F%2Fwww.tiktok.com&token={token}&aid=1459',
+                ttwid,
+                passport_csrf_token
+            )
+            if "confirmed" in qr_check.text:
+                sessionid = qr_check.cookies.get('sessionid')
+                qrcodelogined(sessionid)
+                qrcodeimg.src_base64 = qrcreate()
+                break
+            elif "expired" in qr_check.text:
+                token, ttwid, passport_csrf_token, shorten_url = get_qrcode_url()
+                print("URL has been updated!")
+            sleep(0.7)
     def logadd(e):
         # Добавляем новую строку в текстовое поле логов
         new_log = f"{datetime.datetime.now().strftime('%H:%M:%S')} "+e+" \n"
@@ -285,6 +347,12 @@ def main(page):
 
         newname.value = newname.value+"\u200D"
         newname.update()
+    def qrcodelogined(a):
+        qrtoggle.value = False
+        sesid.visible = True
+        qrcodeimg.visible = False
+        sesid.value = a
+        page.update()
     page.adaptive = True
     def ddchanged(a):
         domen = domenchange.value
@@ -294,6 +362,25 @@ def main(page):
             ft.IconButton(ft.icons.TELEGRAM, style=ft.ButtonStyle(padding=0),on_click=tgbutton)
         ],
     )
+    def qrtoggled(a):
+        sesid.visible = not qrtoggle.value
+        qrcodeimg.visible = qrtoggle.value
+        sesid.update()
+        qrcodeimg.update()
+
+    def qrcreate():
+        token, ttwid, passport_csrf_token, shorten_url = get_qrcode_url()
+        qr_thread = threading.Thread(target=check_qr_connect, args=(token, ttwid, passport_csrf_token))
+        qr_thread.start()
+
+        img = qrcode.make(shorten_url)
+        buffered = io.BytesIO()
+        img.save(buffered)
+        img_bytes = buffered.getvalue()
+        string = base64.b64encode(img_bytes)
+        base64_string = string.decode('utf-8')
+        return base64_string
+
     def changnameclicked(e):
         device_id = str(random.randint(777777788, 999999999999))
         iid = str(random.randint(777777788, 999999999999))
@@ -315,8 +402,8 @@ def main(page):
             else:
                 logadd(f"Couldn't change the name")
                 ftbutton.visible = True
-                if json.loads(ch)["status_msg"] == "Slow down, you are editing too fast.":
-                    logadd("Slow down you are editing to fast, try it on another account e")
+                if json.loads(ch)["status_code"] == 2160:
+                    logadd("Slow down you are editing to fast, try it on another account")
                 page.update()
         else:
             logadd("Invalid session ID or other error.")
@@ -345,10 +432,14 @@ def main(page):
         ft.dropdown.Option("api16-va.tiktokv.com"),
     ], on_change=ddchanged)
     ftbutton = ft.FilledButton(content=ft.Text("Change"),on_click=changnameclicked)
+    qrtoggle = ft.Switch(label="QR code login", value=False,on_change=qrtoggled)
+    qrcodeimg = ft.Image(src_base64=qrcreate(),visible=False)
     page.add(
         ft.SafeArea(
             ft.Column(
                 [
+                    qrtoggle,
+                    qrcodeimg,
                     sesid,
                     newname,
                     ftbutton,
@@ -359,5 +450,4 @@ def main(page):
             )
         )
     )
-
 ft.app(target=main,assets_dir="assets")
