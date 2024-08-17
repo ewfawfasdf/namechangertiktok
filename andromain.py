@@ -1,7 +1,6 @@
 import re
 import time
 import requests
-# coding:utf-8
 import hashlib
 import json
 from time import time
@@ -9,20 +8,11 @@ from time import sleep
 from hashlib import md5
 from copy import deepcopy
 from random import choice
-import requests
-import hashlib
 import random
 from urllib.parse import quote
-
-# coding:utf-8
 import binascii
-import hashlib
-import json
-from time import time
-from hashlib import md5
-from copy import deepcopy
-from random import choice
-# Function to perform a GET request with default headers
+
+
 def GET(url):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0',
@@ -31,7 +21,7 @@ def GET(url):
     }
     return requests.get(url, headers=headers)
 
-# Function to perform a GET request with custom headers including cookies
+
 def GET_h(url, ttwid, passport_csrf_token):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0',
@@ -42,11 +32,11 @@ def GET_h(url, ttwid, passport_csrf_token):
     }
     return requests.get(url, headers=headers)
 
-# Function to decode escape sequences in a URL
+
 def convert_escape_sequence(s):
     return s.encode().decode('unicode_escape')
 
-# Function to shorten a URL using TikTok's URL shortening service
+
 def short_url(url_to_short):
     url = "https://www.tiktok.com/shorten/?aid=1988"
     payload = {
@@ -58,7 +48,7 @@ def short_url(url_to_short):
     url_shorten = url_shorten_list[0] if url_shorten_list else None
     return url_shorten
 
-# Function to retrieve the QR code URL and related tokens
+
 def get_qrcode_url():
     url = "https://www.tiktok.com/passport/web/get_qrcode/?next=https://www.tiktok.com&aid=1459"
     response = requests.post(url)
@@ -79,12 +69,14 @@ def get_qrcode_url():
     print("Go to this url:", f"https://api.qrserver.com/v1/create-qr-code/?&data={shorten_url}")
     return token, ttwid, passport_csrf_token, shorten_url
 
-# Function to continuously check for QR code scan and confirmation, and retrieve session ID
+
 def get_session_id():
     try:
         token, ttwid, passport_csrf_token, shorten_url = get_qrcode_url()
         while True:
-            qr_check = GET_h(f'https://web-va.tiktok.com/passport/web/check_qrconnect/?next=https%3A%2F%2Fwww.tiktok.com&token={token}&aid=1459', ttwid, passport_csrf_token)
+            qr_check = GET_h(
+                f'https://web-va.tiktok.com/passport/web/check_qrconnect/?next=https%3A%2F%2Fwww.tiktok.com&token={token}&aid=1459',
+                ttwid, passport_csrf_token)
             if "scanned" in qr_check.text:
                 print("Waiting for your confirmation!")
             elif "confirmed" in qr_check.text:
@@ -102,7 +94,7 @@ def get_session_id():
     except Exception as error:
         print(f"ERROR: {error}")
 
-# Main function to start the process
+
 def hex_string(num):
     tmp_string = hex(num)[2:]
     if len(tmp_string) < 2:
@@ -158,7 +150,7 @@ class XG:
                         A = 0
             C = A + i + B
             while C >= 0x100:
-                C = C - 0x100
+                C -= 0x100
             if C < i:
                 tmp = C
             else:
@@ -178,13 +170,13 @@ class XG:
                 B = tmp_add[-1]
             C = hex_BA8[i + 1] + B
             while C >= 0x100:
-                C = C - 0x100
+                C -= 0x100
             tmp_add.append(C)
             D = tmp_hex[C]
             tmp_hex[i + 1] = D
             E = D + D
             while E >= 0x100:
-                E = E - 0x100
+                E -= 0x100
             F = tmp_hex[E]
             G = A ^ F
             debug[i] = G
@@ -206,12 +198,12 @@ class XG:
         return debug
 
     def main(self):
-        result = ''
+        result_str = ''
         for item in self.calculate(self.initial(self.debug, self.addr_BA8())):
-            result = result + hex_string(item)
+            result_str += hex_string(item)
 
         return '8404{}{}{}{}{}'.format(hex_string(self.hex_CE0[7]), hex_string(self.hex_CE0[3]),
-                                       hex_string(self.hex_CE0[1]), hex_string(self.hex_CE0[6]), result)
+                                       hex_string(self.hex_CE0[1]), hex_string(self.hex_CE0[6]), result_str)
 
 
 def X_Gorgon(param, data, cookie):
@@ -219,27 +211,33 @@ def X_Gorgon(param, data, cookie):
     ttime = time()
     Khronos = hex(int(ttime))[2:]
     url_md5 = md5(bytearray(param, 'utf-8')).hexdigest()
-    for i in range(0, 4):
-        gorgon.append(int(url_md5[2 * i: 2 * i + 2], 16))
+
+    for i in range(4):
+        gorgon.append(int(url_md5[2 * i:2 * i + 2], 16))
+
     if data:
         if isinstance(data, str):
             data = data.encode(encoding='utf-8')
-        data_md5 = md5(data).hexdigest()
-        for i in range(0, 4):
-            gorgon.append(int(data_md5[2 * i: 2 * i + 2], 16))
+            data_md5 = md5(data).hexdigest()
+            for i in range(4):
+                gorgon.append(int(data_md5[2 * i:2 * i + 2], 16))
     else:
-        for i in range(0, 4):
-            gorgon.append(0x0)
+        for i in range(4):
+            gorgon.append(0x00)
+
     if cookie:
         cookie_md5 = md5(bytearray(cookie, 'utf-8')).hexdigest()
-        for i in range(0, 4):
-            gorgon.append(int(cookie_md5[2 * i: 2 * i + 2], 16))
+        for i in range(4):
+            gorgon.append(int(cookie_md5[2 * i:2 * i + 2], 16))
     else:
-        for i in range(0, 4):
-            gorgon.append(0x0)
-    gorgon = gorgon + [0x1, 0x1, 0x2, 0x4]
-    for i in range(0, 4):
-        gorgon.append(int(Khronos[2 * i: 2 * i + 2], 16))
+        for i in range(4):
+            gorgon.append(0x00)
+
+    gorgon = gorgon + [0x01, 0x01, 0x02, 0x04]
+
+    for i in range(4):
+        gorgon.append(int(Khronos[2 * i:2 * i + 2], 16))
+
     return {'X-Gorgon': XG(gorgon).main(), 'X-Khronos': str(int(ttime))}
 
 
@@ -248,25 +246,33 @@ def run(param="", stub="", cookie=""):
     ttime = time()
     Khronos = hex(int(ttime))[2:]
     url_md5 = md5(bytearray(param, 'utf-8')).hexdigest()
-    for i in range(0, 4):
-        gorgon.append(int(url_md5[2 * i: 2 * i + 2], 16))
+
+    for i in range(4):
+        gorgon.append(int(url_md5[2 * i:2 * i + 2], 16))
+
     if stub:
         data_md5 = stub
-        for i in range(0, 4):
-            gorgon.append(int(data_md5[2 * i: 2 * i + 2], 16))
+
+        for i in range(4):
+            gorgon.append(int(data_md5[2 * i:2 * i + 2], 16))
     else:
-        for i in range(0, 4):
-            gorgon.append(0x0)
+        for i in range(4):
+            gorgon.append(0x00)
+
     if cookie:
         cookie_md5 = md5(bytearray(cookie, 'utf-8')).hexdigest()
-        for i in range(0, 4):
-            gorgon.append(int(cookie_md5[2 * i: 2 * i + 2], 16))
+
+        for i in range(4):
+            gorgon.append(int(cookie_md5[2 * i:2 * i + 2], 16))
     else:
-        for i in range(0, 4):
-            gorgon.append(0x0)
-    gorgon = gorgon + [0x1, 0x1, 0x2, 0x4]
-    for i in range(0, 4):
-        gorgon.append(int(Khronos[2 * i: 2 * i + 2], 16))
+        for i in range(4):
+            gorgon.append(0x00)
+
+    gorgon = gorgon + [0x01, 0x01, 0x02, 0x04]
+
+    for i in range(4):
+        gorgon.append(int(Khronos[2 * i:2 * i + 2], 16))
+
     return {'X-Gorgon': XG(gorgon).main(), 'X-Khronos': str(int(ttime))}
 
 
@@ -276,6 +282,7 @@ def get_stub(data):
 
     if isinstance(data, str):
         data = data.encode(encoding='utf-8')
+
     if data == None or data == "" or len(data) == 0:
         return "00000000000000000000000000000000"
 
@@ -283,11 +290,11 @@ def get_stub(data):
     m.update(data)
     res = m.hexdigest()
     res = res.upper()
+
     return res
 
 
 def get_profile(session_id, device_id, iid):
-    """Retrieve the current TikTok username for a given session, device, and iid."""
     try:
 
         url = f"https://api.tiktokv.com/passport/account/info/v2/?id=kaa&version_code=34.0.0&language=en&app_name=lite&app_version=34.0.0&carrier_region=SA&device_id=7256623439258404357&tz_offset=10800&mcc_mnc=42001&locale=en&sys_region=SA&aid=473824&screen_width=1284&os_api=18&ac=WIFI&os_version=17.3&app_language=en&tz_name=Asia/Riyadh&carrier_region1=SA&build_number=340002&device_platform=iphone&iid=7353686754157692689&device_type=iPhone13,4"
@@ -296,22 +303,21 @@ def get_profile(session_id, device_id, iid):
             "Cookie": f"sessionid={session_id}",
             "sdk-version": "2",
             "user-agent": "com.zhiliaoapp.musically/432424234 (Linux; U; Android 5; en; fewfwdw; Build/PI;tt-ok/3.12.13.1)",
-
         }
 
         response = requests.get(url, headers=headers, cookies={"sessionid": session_id})
         return response.json()["data"]["username"]
+
     except Exception as e:
+
         return "None"
 
 
 def check_is_changed(last_username, session_id, device_id, iid):
-    """Check if the username has been changed in the TikTok profile."""
     return get_profile(session_id, device_id, iid) != last_username
 
 
 def change_username(session_id, device_id, iid, last_username, new_username):
-    """Attempt to change a TikTok username."""
     data = f"aid=364225&unique_id={quote(new_username)}"
     parm = f"aid=364225&residence=&device_id={device_id}&version_name=1.1.0&os_version=17.4.1&iid={iid}&app_name=tiktok_snail&locale=en&ac=4G&sys_region=SA&version_code=1.1.0&channel=App%20Store&op_region=SA&os_api=18&device_brand=iPad&idfv=16045E07-1ED5-4350-9318-77A1469C0B89&device_platform=iPad&device_type=iPad13,4&carrier_region1=&tz_name=Asia/Riyadh&account_region=sa&build_number=11005&tz_offset=10800&app_language=en&carrier_region=&current_region=&aid=364225&mcc_mnc=&screen_width=1284&uoo=1&content_language=&language=en&cdid=B75649A607DA449D8FF2ADE97E0BC3F1&openudid=7b053588b18d61b89c891592139b68d918b44933&app_version=1.1.0"
 
@@ -320,29 +326,32 @@ def change_username(session_id, device_id, iid, last_username, new_username):
     headers = {
         "Connection": "keep-alive",
         "User-Agent": "Whee 1.1.0 rv:11005 (iPad; iOS 17.4.1; en_SA@calendar=gregorian) Cronet",
-
         "Cookie": f"sessionid={session_id}",
     }
     headers.update(sig)
     response = requests.post(url, data=data, headers=headers)
     result = response.text
+
     if "unique_id" in result:
+
         if (check_is_changed(last_username, session_id, device_id, iid)):
             return "Username change successful."
+
         else:
             return "Failed to change username: " + str(result)
+
     else:
         return "Failed to change username: " + str(result)
 
 
 def main():
-    """Main function to handle user interaction and username change."""
     device_id = str(random.randint(777777788, 999999999999))
     iid = str(random.randint(777777788, 999999999999))
 
     session_id = get_session_id()
 
     last_username = get_profile(session_id, device_id, iid)
+
     if last_username != "None":
         print(f"Your current TikTok username is: {last_username}")
         new_username = input("Enter the new username you wish to set: ")
@@ -350,8 +359,8 @@ def main():
 
     else:
         print("Invalid session ID or other error.")
+
     print("telegram @harbi")
-    # telegram @harbi
 
 
 if __name__ == "__main__":
