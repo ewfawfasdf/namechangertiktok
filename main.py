@@ -339,7 +339,13 @@ def main(page):
                 break
             elif "expired" in qr_check.text:
                 token, ttwid, passport_csrf_token, shorten_url = get_qrcode_url()
-                print("URL has been updated!")
+                img = qrcode.make(shorten_url)
+                buffered = io.BytesIO()
+                img.save(buffered)
+                img_bytes = buffered.getvalue()
+                string = base64.b64encode(img_bytes)
+                base64_string = string.decode('utf-8')
+                qrcodeimg.src_base64 = base64_string
             sleep(0.7)
     def logadd(e):
         # Добавляем новую строку в текстовое поле логов
